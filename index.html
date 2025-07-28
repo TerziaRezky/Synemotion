@@ -516,6 +516,8 @@
       let lastEmotion = null;
       let lastEmotionTime = 0;
       const emotionChangeCooldown = 3000; // 3 detik cooldown setelah perubahan emosi
+      let hasGreeted = false; // Untuk menandai apakah sudah memberikan salam
+      let lastGender = null; // Untuk menyimpan gender terakhir yang terdeteksi
 
       const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
 
@@ -572,6 +574,19 @@
           "Emosi adalah bagian alami dari manusia"
         ]
       };
+
+      // Daftar salam untuk pria dan wanita
+      const maleGreetings = [
+        "Hallo anjing",
+        "Hallo babi",
+        "Hallo monyet"
+      ];
+      
+      const femaleGreetings = [
+        "Hallo cantik",
+        "Hallo sayang",
+        "Hallo imut"
+      ];
 
       // Initialize emotion stats display
       function initEmotionStats() {
@@ -710,11 +725,41 @@
         synth.cancel(); // Batalkan ucapan sebelumnya
         utterance.text = randomMessage;
         utterance.voice = indonesianVoice || voices[0];
-        utterance.rate = 0.9;
+        utterance.rate = 0.8;
         utterance.pitch = 1;
         utterance.volume = 1;
         
         synth.speak(utterance);
+      }
+
+      // Berikan salam berdasarkan gender
+      function giveGenderGreeting(gender) {
+        const synth = window.speechSynthesis;
+        const voices = synth.getVoices();
+        const utterance = new SpeechSynthesisUtterance();
+        
+        // Cari voice Bahasa Indonesia jika tersedia
+        const indonesianVoice = voices.find(voice => 
+          voice.lang === 'id-ID' || voice.name.includes('Indonesian'));
+        
+        // Pilih salam berdasarkan gender
+        let greeting;
+        if (gender === 'male') {
+          greeting = maleGreetings[Math.floor(Math.random() * maleGreetings.length)];
+        } else {
+          greeting = femaleGreetings[Math.floor(Math.random() * femaleGreetings.length)];
+        }
+        
+        // Setel pengaturan suara
+        synth.cancel(); // Batalkan ucapan sebelumnya
+        utterance.text = greeting;
+        utterance.voice = indonesianVoice || voices[0];
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        synth.speak(utterance);
+        hasGreeted = true; // Tandai bahwa sudah memberikan salam
       }
 
       // Tampilkan notifikasi
@@ -829,8 +874,20 @@
               }
               
               updateDetectionInfo(resized);
+              
+              // Berikan salam jika ini deteksi pertama dan gender terdeteksi
+              if (!hasGreeted && resized[0].gender) {
+                const currentGender = resized[0].gender;
+                if (currentGender !== lastGender) {
+                  giveGenderGreeting(currentGender.toLowerCase());
+                  lastGender = currentGender;
+                }
+              }
             } else {
               updateDetectionInfo([]);
+              // Reset greeting flag jika tidak ada wajah terdeteksi
+              hasGreeted = false;
+              lastGender = null;
             }
 
             resized.forEach(result => {
