@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synemotion</title>
+
+  <!-- Favicon for browser tab -->
+  <link rel="icon" href="logo.png" type="image/png">
+
+  <!-- Apple Touch Icon (for iOS devices) -->
+  <link rel="apple-touch-icon" href="logo.png">
+
+  <!-- Open Graph Image (for social media sharing) -->
+  <meta property="og:image" content="logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Open Graph / Facebook Meta Tags -->
+  <meta property="og:title" content="Synemotion - Deteksi Emosi & Gesture Canggih">
+  <meta property="og:description" content="Aplikasi deteksi emosi wajah dan gesture tangan">
+  <meta property="og:image" content="https://synemotion.vercel.app/logo.png">
+  <meta property="og:url" content="https://synemotion.vercel.app">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Synemotion - Deteksi Emosi & Gesture Canggih">
+  <meta name="twitter:description" content="Aplikasi deteksi emosi wajah dan gesture tangan">
+  <meta name="twitter:image" content="https://synemotion.vercel.app/logo.png">
+
+  <!-- Additional Recommended Tags -->
+  <meta name="description" content="Aplikasi deteksi emosi wajah dan gesture tangan">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --accent-color: #4cc9f0;
+      --success-color: #4ade80;
+      --warning-color: #fbbf24;
+      --error-color: #f87171;
+      --dark-bg: #0f172a;
+      --light-bg: #1e293b;
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 0;
+    }
+    
+    header {
+      background: var(--light-bg);
+      padding: 15px 20px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    .app-container {
+      width: 100%;
+      max-width: 1000px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .detection-area {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4/3;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+      background: #000;
+    }
+    
+    video, canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      object-fit: cover;
+    }
+    
+    #output {
+      margin: 16px 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.1);
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(74, 206, 240, 0.3);
+      text-align: center;
+      min-width: 300px;
+      transition: all 0.3s ease;
+    }
+    
+    #output.active {
+      background: rgba(74, 222, 128, 0.2);
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+    }
+    
+    .guide-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .guide-section {
+      background: var(--light-bg);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .guide-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .gesture-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    
+    .gesture-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 12px;
+      min-width: 80px;
+      text-align: center;
+      transition: transform 0.2s;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+    
+    .gesture-item:hover {
+      transform: translateY(-3px);
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .gesture-item strong {
+      display: block;
+      font-size: 1.1rem;
+      color: var(--text-light);
+      margin-bottom: 5px;
+    }
+    
+    .gesture-item span {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--accent-color);
+    }
+    
+    .combination-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .combination-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 10px 15px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .combination-item span {
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .control-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+    
+    .control-btn:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    
+    .control-btn.active {
+      background: var(--primary-color);
+    }
+    
+    .control-btn i {
+      font-size: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.2rem;
+      }
+      
+      #output {
+        font-size: 1.2rem;
+        padding: 12px 20px;
+      }
+      
+      .gesture-item {
+        padding: 10px;
+        min-width: 70px;
+      }
+      
+      .combination-item {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
+      
+      .controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .control-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    /* Animation for detection */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .pulse {
+      animation: pulse 0.5s ease;
+    }
+    
+    /* Status indicator */
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      display: inline-block;
+      margin-right: 8px;
+    }
+    
+    .status-indicator.active {
+      background: var(--success-color);
+      box-shadow: 0 0 8px var(--success-color);
+    }
+    
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 150px;
+      background-color: var(--light-bg);
+      color: var(--text-light);
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+    
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Night Vision Effect */
+    .night-vision {
+      filter: grayscale(100%) brightness(3) contrast(1.5) hue-rotate(90deg);
+    }
+    
+    .night-vision-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,255,0,0.5);
+      transition: all 0.3s ease;
+    }
+    
+    .night-vision-toggle:hover {
+      transform: scale(1.1);
+    }
+    
+    .night-vision-toggle.active {
+      background: rgba(0,255,0,0.7);
+      color: black;
+      box-shadow: 0 0 15px rgba(0,255,0,0.8);
+    }
+    
+    .night-vision-toggle i {
+      font-size: 1.2rem;
+    }
+    
+    /* Night vision label */
+    .night-vision-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      color: lime;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      text-shadow: 0 0 5px lime;
+      display: none;
+    }
+    
+    .night-vision .night-vision-label {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><i class="fas fa-hand-paper"></i> Hand Gesture Detection</h1>
+  </header>
+
+  <div class="app-container">
+    <div class="detection-area">
+      <div class="video-wrapper">
+        <video id="input_video" autoplay muted playsinline></video>
+        <canvas id="output_canvas"></canvas>
+        <button class="night-vision-toggle tooltip" id="toggleNightVision">
+          <i class="fas fa-moon"></i>
+          <span class="tooltiptext">Toggle Night Vision Mode</span>
+        </button>
+        <div class="night-vision-label">NIGHT VISION MODE</div>
+      </div>
+      
+      <div id="output">
+        <span class="status-indicator"></span>
+        Menunggu gesture stabil...
+      </div>
+      
+      <div class="controls">
+        <button class="control-btn tooltip" id="toggleVoice">
+          <i class="fas fa-volume-up"></i>
+          <span>Suara</span>
+          <span class="tooltiptext">Aktifkan/nonaktifkan feedback suara</span>
+        </button>
+        <button class="control-btn tooltip" id="toggleHelp">
+          <i class="fas fa-question-circle"></i>
+          <span>Panduan</span>
+          <span class="tooltiptext">Tampilkan/sembunyikan panduan</span>
+        </button>
+      </div>
+    </div>
+    
+    <div class="guide-container" id="guideContainer">
+      <!-- Panduan A–F -->
+      <div class="guide-section">
+        <h2 class="guide-title">
+          <i class="fas fa-hand-paper"></i>
+          Gesture Satu Tangan (A–F)
+        </h2>
+        <div class="gesture-row">
+          <div class="gesture-item">
+            <strong>0 Jari</strong>
+            <span>A</span>
+          </div>
+          <div class="gesture-item">
+            <strong>1 Jari</strong>
+            <span>B</span>
+          </div>
+          <div class="gesture-item">
+            <strong>2 Jari</strong>
+            <span>C</span>
+          </div>
+          <div class="gesture-item">
+            <strong>3 Jari</strong>
+            <span>D</span>
+          </div>
+          <div class="gesture-item">
+            <strong>4 Jari</strong>
+            <span>E</span>
+          </div>
+          <div class="gesture-item">
+            <strong>5 Jari</strong>
+            <span>F</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panduan G–Z -->
+      <div class="guide-section">
+        <h2 class="guide-title">
+          <i class="fas fa-hands"></i>
+          Kombinasi Dua Tangan (G–Z)
+        </h2>
+        <div class="combination-row">
+          <div class="combination-item">A + B <span>→ G</span></div>
+          <div class="combination-item">B + C <span>→ H</span></div>
+          <div class="combination-item">C + D <span>→ I</span></div>
+          <div class="combination-item">A + E <span>→ J</span></div>
+          <div class="combination-item">E + F <span>→ K</span></div>
+          <div class="combination-item">B + E <span>→ L</span></div>
+          <div class="combination-item">A + C <span>→ M</span></div>
+          <div class="combination-item">D + F <span>→ N</span></div>
+          <div class="combination-item">C + E <span>→ O</span></div>
+          <div class="combination-item">A + D <span>→ P</span></div>
+          <div class="combination-item">B + D <span>→ Q</span></div>
+          <div class="combination-item">C + F <span>→ R</span></div>
+          <div class="combination-item">B + F <span>→ S</span></div>
+          <div class="combination-item">A + F <span>→ T</span></div>
+          <div class="combination-item">D + E <span>→ U</span></div>
+          <div class="combination-item">B + E <span>→ V</span></div>
+          <div class="combination-item">A + A <span>→ W</span></div>
+          <div class="combination-item">C + C <span>→ X</span></div>
+          <div class="combination-item">E + E <span>→ Y</span></div>
+          <div class="combination-item">F + F <span>→ Z</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const videoElement = document.getElementById('input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const outputDiv = document.getElementById('output');
+    const statusIndicator = document.querySelector('.status-indicator');
+    const toggleVoiceBtn = document.getElementById('toggleVoice');
+    const toggleHelpBtn = document.getElementById('toggleHelp');
+    const toggleNightVisionBtn = document.getElementById('toggleNightVision');
+    const guideContainer = document.getElementById('guideContainer');
+
+    // Settings
+    let settings = {
+      voiceFeedback: true,
+      showGuide: true,
+      nightVision: false
+    };
+
+    // Initialize UI
+    toggleVoiceBtn.classList.toggle('active', settings.voiceFeedback);
+    toggleNightVisionBtn.classList.toggle('active', settings.nightVision);
+    guideContainer.style.display = settings.showGuide ? 'flex' : 'none';
+    if (settings.nightVision) {
+      document.querySelector('.video-wrapper').classList.add('night-vision');
+    }
+
+    // Control buttons
+    toggleVoiceBtn.addEventListener('click', () => {
+      settings.voiceFeedback = !settings.voiceFeedback;
+      toggleVoiceBtn.classList.toggle('active', settings.voiceFeedback);
+    });
+
+    toggleHelpBtn.addEventListener('click', () => {
+      settings.showGuide = !settings.showGuide;
+      toggleHelpBtn.classList.toggle('active', settings.showGuide);
+      guideContainer.style.display = settings.showGuide ? 'flex' : 'none';
+    });
+
+    toggleNightVisionBtn.addEventListener('click', () => {
+      settings.nightVision = !settings.nightVision;
+      toggleNightVisionBtn.classList.toggle('active', settings.nightVision);
+      document.querySelector('.video-wrapper').classList.toggle('night-vision', settings.nightVision);
+    });
+
+    const gestureMap = {
+      0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F"
+    };
+
+    const kombinasiGesture = {
+      "A+B": "G", "B+C": "H", "C+D": "I",
+      "A+E": "J", "E+F": "K", "B+E": "L",
+      "A+C": "M", "D+F": "N", "C+E": "O",
+      "A+D": "P", "B+D": "Q", "C+F": "R",
+      "B+F": "S", "A+F": "T", "D+E": "U",
+      "B+E": "V", "A+A": "W", "C+C": "X",
+      "E+E": "Y", "F+F": "Z"
+    };
+
+    let gestureHistory = { Left: [], Right: [] };
+    let lastCombined = "";
+    let lastSpoken = { Left: "", Right: "" };
+
+    const MAX_HISTORY = 6;
+    const MIN_STABLE_COUNT = 5;
+
+    function getGesture(landmarks, handedness) {
+      if (!landmarks || landmarks.length !== 21) return "-";
+
+      let fingerCount = 0;
+      const tips = [8, 12, 16, 20];
+
+      for (let i = 0; i < tips.length; i++) {
+        if (landmarks[tips[i]].y < landmarks[tips[i] - 2].y) fingerCount++;
+      }
+
+      const thumbTip = landmarks[4], thumbIP = landmarks[3], thumbMCP = landmarks[2];
+      if ((handedness === "Right" && thumbTip.x < thumbIP.x && thumbTip.x < thumbMCP.x) ||
+          (handedness === "Left" && thumbTip.x > thumbIP.x && thumbTip.x > thumbMCP.x)) {
+        fingerCount++;
+      }
+
+      return gestureMap[fingerCount] || "-";
+    }
+
+    function getStableGesture(history) {
+      if (history.length < MAX_HISTORY) return null;
+      const counts = {};
+      history.slice(-MAX_HISTORY).forEach(g => {
+        counts[g] = (counts[g] || 0) + 1;
+      });
+      for (const [g, count] of Object.entries(counts)) {
+        if (count >= MIN_STABLE_COUNT) return g;
+      }
+      return null;
+    }
+
+    function speak(text) {
+      if (!settings.voiceFeedback) return;
+      
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = 'id-ID';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(msg);
+    }
+
+    function normalizeCombo(a, b) {
+      return [a, b].sort().join('+');
+    }
+
+    function drawLandmarkDot(ctx, x, y, size, color) {
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+      
+      // Add glow effect (more pronounced in night vision)
+      ctx.shadowColor = color;
+      ctx.shadowBlur = settings.nightVision ? 15 : 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function onResults(results) {
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      
+      // Apply night vision effect to the video feed
+      if (settings.nightVision) {
+        canvasCtx.filter = 'grayscale(100%) brightness(3) contrast(1.5) hue-rotate(90deg)';
+      } else {
+        // Normal mode with slight enhancement
+        canvasCtx.filter = 'contrast(1.1) brightness(1.1)';
+      }
+      
+      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+      canvasCtx.filter = 'none';
+
+      let detected = { Left: null, Right: null };
+
+      if (results.multiHandLandmarks && results.multiHandedness) {
+        statusIndicator.classList.add('active');
+        
+        for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+          const handedness = results.multiHandedness[i].label;
+          const landmarks = results.multiHandLandmarks[i];
+          const gesture = getGesture(landmarks, handedness);
+
+          gestureHistory[handedness] = [...gestureHistory[handedness].slice(-MAX_HISTORY + 1), gesture];
+          const stable = getStableGesture(gestureHistory[handedness]);
+          detected[handedness] = stable;
+
+          // Set hand color (brighter in night vision)
+          const handColor = handedness === "Left" ? 
+            (settings.nightVision ? "#00FF00" : "#00AA00") : 
+            (settings.nightVision ? "#00FFFF" : "#00AAAA");
+          const dotColor = handedness === "Left" ? 
+            (settings.nightVision ? "rgba(0, 255, 0, 0.9)" : "rgba(0, 200, 0, 0.8)") : 
+            (settings.nightVision ? "rgba(0, 255, 255, 0.9)" : "rgba(0, 200, 255, 0.8)");
+          
+          // Draw connections with modern style
+          canvasCtx.lineWidth = settings.nightVision ? 4 : 3;
+          canvasCtx.strokeStyle = handColor;
+          canvasCtx.fillStyle = handColor + (settings.nightVision ? "30" : "20"); // Add transparency
+          
+          // Draw palm
+          const palmPoints = [0, 1, 2, 5, 9, 13, 17, 0];
+          canvasCtx.beginPath();
+          canvasCtx.moveTo(landmarks[palmPoints[0]].x * canvasElement.width, landmarks[palmPoints[0]].y * canvasElement.height);
+          for (let j = 1; j < palmPoints.length; j++) {
+            canvasCtx.lineTo(landmarks[palmPoints[j]].x * canvasElement.width, landmarks[palmPoints[j]].y * canvasElement.height);
+          }
+          canvasCtx.closePath();
+          canvasCtx.fill();
+          canvasCtx.stroke();
+
+          // Draw fingers with modern dot connections
+          const fingerConnections = [
+            [0, 1, 2, 3, 4],    // Thumb
+            [0, 5, 6, 7, 8],    // Index
+            [0, 9, 10, 11, 12], // Middle
+            [0, 13, 14, 15, 16],// Ring
+            [0, 17, 18, 19, 20] // Pinky
+          ];
+          
+          for (const finger of fingerConnections) {
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(landmarks[finger[0]].x * canvasElement.width, landmarks[finger[0]].y * canvasElement.height);
+            
+            // Draw connecting lines
+            for (let j = 1; j < finger.length; j++) {
+              canvasCtx.lineTo(landmarks[finger[j]].x * canvasElement.width, landmarks[finger[j]].y * canvasElement.height);
+            }
+            canvasCtx.stroke();
+            
+            // Draw dots at each joint (larger in night vision)
+            for (let j = 0; j < finger.length; j++) {
+              const x = landmarks[finger[j]].x * canvasElement.width;
+              const y = landmarks[finger[j]].y * canvasElement.height;
+              const baseSize = settings.nightVision ? 1.2 : 1;
+              const dotSize = j === 0 ? 6 * baseSize : 
+                             (j === finger.length - 1 ? 8 * baseSize : 
+                              5 * baseSize);
+              drawLandmarkDot(canvasCtx, x, y, dotSize, dotColor);
+            }
+          }
+
+          // Draw gesture label with modern style
+          canvasCtx.font = "bold 16px Poppins";
+          canvasCtx.fillStyle = settings.nightVision ? "#000" : "#fff";
+          canvasCtx.strokeStyle = settings.nightVision ? handColor : "#000";
+          canvasCtx.lineWidth = 2;
+          const labelX = landmarks[0].x * canvasElement.width - 30;
+          const labelY = landmarks[0].y * canvasElement.height - 15;
+          
+          // Label background
+          canvasCtx.fillStyle = settings.nightVision ? "rgba(0, 255, 0, 0.5)" : "rgba(0, 0, 0, 0.5)";
+          canvasCtx.fillRect(labelX - 5, labelY - 20, 60, 25);
+          
+          // Label text
+          canvasCtx.fillStyle = handColor;
+          canvasCtx.fillText(`${handedness}: ${gesture}`, labelX, labelY);
+        }
+
+        const left = detected["Left"];
+        const right = detected["Right"];
+
+        if (left && right) {
+          const combo = normalizeCombo(left, right);
+          if (kombinasiGesture[combo] && lastCombined !== combo) {
+            const huruf = kombinasiGesture[combo];
+            outputDiv.innerHTML = `<span class="status-indicator active"></span> Gabungan: <strong>${combo}</strong> → <span style="color: var(--accent-color); font-size: 1.8rem;">${huruf}</span>`;
+            outputDiv.classList.add('active', 'pulse');
+            setTimeout(() => outputDiv.classList.remove('pulse'), 500);
+            speak(huruf);
+            lastCombined = combo;
+          }
+        } else {
+          outputDiv.classList.remove('active');
+          if (left && left !== lastSpoken.Left) {
+            speak(left);
+            lastSpoken.Left = left;
+            outputDiv.innerHTML = `<span class="status-indicator active"></span> Kiri: <span style="color: #0f0; font-size: 1.8rem;">${left}</span>`;
+            lastCombined = "";
+          }
+          if (right && right !== lastSpoken.Right) {
+            speak(right);
+            lastSpoken.Right = right;
+            outputDiv.innerHTML += right ? ` | Kanan: <span style="color: #0ff; font-size: 1.8rem;">${right}</span>` : "";
+            lastCombined = "";
+          }
+        }
+      } else {
+        statusIndicator.classList.remove('active');
+        outputDiv.innerHTML = `<span class="status-indicator"></span> Menunggu gesture stabil...`;
+        outputDiv.classList.remove('active');
+      }
+
+      canvasCtx.restore();
+    }
+
+    // Initialize hand tracking
+    const hands = new Hands({ 
+      locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` 
+    });
+    
+    hands.setOptions({
+      selfieMode: true,
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.85,
+      minTrackingConfidence: 0.75
+    });
+    
+    hands.onResults(onResults);
+
+    // Start camera with higher quality
+    const camera = new Camera(videoElement, {
+      onFrame: async () => await hands.send({ image: videoElement }),
+      width: 1280,
+      height: 720
+    });
+    
+    // Set canvas resolution to match video
+    function resizeCanvas() {
+      canvasElement.width = videoElement.videoWidth;
+      canvasElement.height = videoElement.videoHeight;
+    }
+    
+    videoElement.addEventListener('loadedmetadata', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+    
+    camera.start().then(() => {
+      console.log("Camera started");
+    }).catch(err => {
+      console.error("Camera error:", err);
+      outputDiv.innerHTML = `<span class="status-indicator" style="background: var(--error-color);"></span> Gagal mengakses kamera`;
+    });
+  </script>
+</body>
+</html>Synemotion

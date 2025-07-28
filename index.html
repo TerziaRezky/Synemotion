@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+ <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synemotion</title>
+
+<!-- Favicon for browser tab -->
+<link rel="icon" href="logo.png" type="image/png">
+
+<!-- Apple Touch Icon (for iOS devices) -->
+<link rel="apple-touch-icon" href="logo.png">
+
+<!-- Open Graph Image (for social media sharing) -->
+<meta property="og:image" content="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Open Graph / Facebook Meta Tags -->
+<meta property="og:title" content="Synemotion - Deteksi Emosi & Gesture Canggih">
+<meta property="og:description" content="Aplikasi deteksi emosi wajah dan gesture tangan">
+<meta property="og:image" content="https://synemotion.vercel.app/logo.png">
+<meta property="og:url" content="https://synemotion.vercel.app">
+<meta property="og:type" content="website">
+
+<!-- Twitter Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Synemotion - Deteksi Emosi & Gesture Canggih">
+<meta name="twitter:description" content="Aplikasi deteksi emosi wajah dan gesture tangan">
+<meta name="twitter:image" content="https://synemotion.vercel.app/logo.png">
+
+<!-- Additional Recommended Tags -->
+<meta name="description" content="Aplikasi deteksi emosi wajah dan gesture tangan">
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --accent-color: #4cc9f0;
+      --positive-color: #4ade80;
+      --negative-color: #f87171;
+      --neutral-color: #94a3b8;
+      --dark-bg: #0f172a;
+      --light-bg: #1e293b;
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--dark-bg);
+      overflow: hidden;
+      font-family: 'Poppins', sans-serif;
+      color: var(--text-light);
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+    }
+
+    #header {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .logo-icon {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+    }
+
+    #main-content {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #video-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    #video, #overlay {
+      position: absolute;
+      max-width: 90%;
+      max-height: 80vh;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    #status {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      color: var(--text-light);
+      font-weight: 500;
+      font-size: 14px;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+
+    .status-indicator.active {
+      background: var(--positive-color);
+      box-shadow: 0 0 8px var(--positive-color);
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 12px;
+      border-radius: 20px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+
+    .control-btn {
+      padding: 10px 18px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .control-btn.active {
+      background: var(--primary-color);
+    }
+
+    .control-btn i {
+      font-size: 16px;
+    }
+
+    #sidebar {
+      width: 300px;
+      background: var(--light-bg);
+      padding: 20px;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+      z-index: 5;
+    }
+
+    .sidebar-section {
+      margin-bottom: 20px;
+    }
+
+    .sidebar-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .emotion-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .emotion-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+    }
+
+    .emotion-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .emotion-emoji {
+      font-size: 18px;
+    }
+
+    .emotion-name {
+      font-weight: 500;
+    }
+
+    .emotion-count {
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    #notification {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 20px 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 1000;
+      display: none;
+      max-width: 80%;
+      text-align: center;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -40%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+   #goToGestur {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  z-index: 1000;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#goToGestur:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 768px) {
+  #goToGestur {
+    padding: 8px 12px;
+    font-size: 13px;
+    top: 18px;
+    right: 15px;
+  }
+  
+ 
+}
+    #toggleSidebar {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    #toggleSidebar:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      #sidebar {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(100%);
+      }
+      
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      
+      #controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 90%;
+      }
+      
+      .control-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+    }
+
+    /* Animation for emotion detection */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .pulse {
+      animation: pulse 0.5s ease;
+    }
+
+    /* Tooltip styles */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 12px;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div id="app-container">
+    <div id="header">
+      <div class="logo">
+        <span class="logo-icon">😊</span>
+        <h1>EmoScan</h1>
+      </div>
+      <div id="status">
+        <div class="status-indicator"></div>
+        <span>Memuat model...</span>
+      </div>
+    </div>
+    
+    <div id="main-content">
+      <div id="video-container">
+        <video id="video" width="720" height="560" autoplay muted></video>
+        <canvas id="overlay" width="720" height="560"></canvas>
+        
+        <button id="toggleSidebar">
+          <i class="fas fa-chart-bar"></i>
+        </button>
+      </div>
+      
+      <div id="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">
+            <i class="fas fa-chart-pie"></i>
+            <span>Statistik Emosi</span>
+          </div>
+          <div class="emotion-stats" id="emotionStats">
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+        
+        <div class="sidebar-section">
+          <div class="sidebar-title">
+            <i class="fas fa-info-circle"></i>
+            <span>Informasi Deteksi</span>
+          </div>
+          <div id="detectionInfo">
+            <p>Tidak ada wajah terdeteksi</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="controls">
+      <button class="control-btn tooltip" id="toggleSounds">
+        <i class="fas fa-volume-up"></i>
+        <span>Efek Suara</span>
+        <span class="tooltiptext">Aktifkan/nonaktifkan efek suara</span>
+      </button>
+      <button class="control-btn tooltip" id="toggleVoice">
+        <i class="fas fa-comment-alt"></i>
+        <span>Voice Feedback</span>
+        <span class="tooltiptext">Aktifkan/nonaktifkan feedback suara</span>
+      </button>
+      <button class="control-btn tooltip" id="toggleBlur">
+        <i class="fas fa-eye-slash"></i>
+        <span>Privasi Wajah</span>
+        <span class="tooltiptext">Aktifkan/nonaktifkan blur wajah</span>
+      </button>
+    </div>
+    
+    <button id="goToGestur" onclick="window.location.href='gestur.html'">
+      <i class="fas fa-hand-pointer"></i>
+      <span>Mode Gestur</span>
+    </button>
+    
+    <div id="notification"></div>
+    
+    <!-- Elemen audio untuk efek suara -->
+    <audio id="positiveSound" class="audio-element" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3"></audio>
+    <audio id="negativeSound" class="audio-element" src="https://assets.mixkit.co/sfx/preview/mixkit-ominous-drums-227.mp3"></audio>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      const video = document.getElementById('video');
+      const status = document.getElementById('status');
+      const statusIndicator = document.querySelector('.status-indicator');
+      const canvas = document.getElementById('overlay');
+      const ctx = canvas.getContext('2d');
+      const notification = document.getElementById('notification');
+      const toggleSoundsBtn = document.getElementById('toggleSounds');
+      const toggleVoiceBtn = document.getElementById('toggleVoice');
+      const toggleBlurBtn = document.getElementById('toggleBlur');
+      const positiveSound = document.getElementById('positiveSound');
+      const negativeSound = document.getElementById('negativeSound');
+      const emotionStatsContainer = document.getElementById('emotionStats');
+      const detectionInfo = document.getElementById('detectionInfo');
+      const toggleSidebarBtn = document.getElementById('toggleSidebar');
+      const sidebar = document.getElementById('sidebar');
+      
+      // Variabel untuk mengontrol suara dan state emosi
+      let settings = {
+        soundEffects: false,
+        voiceFeedback: false,
+        faceBlur: false
+      };
+      
+      let lastEmotion = null;
+      let lastEmotionTime = 0;
+      const emotionChangeCooldown = 3000; // 3 detik cooldown setelah perubahan emosi
+
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+
+      let emotionStats = {
+        happy: 0,
+        sad: 0,
+        angry: 0,
+        surprised: 0,
+        neutral: 0,
+        fearful: 0,
+        disgusted: 0
+      };
+
+      const emotionStyles = {
+        happy:     { emoji: '😊', color: '#4ade80', type: 'positive', name: 'Senang' },
+        sad:       { emoji: '😢', color: '#60a5fa', type: 'negative', name: 'Sedih' },
+        angry:     { emoji: '😠', color: '#f87171', type: 'negative', name: 'Marah' },
+        fearful:   { emoji: '😨', color: '#a78bfa', type: 'negative', name: 'Takut' },
+        disgusted: { emoji: '🤢', color: '#34d399', type: 'negative', name: 'Jijik' },
+        surprised: { emoji: '😲', color: '#fbbf24', type: 'positive', name: 'Terkejut' },
+        neutral:   { emoji: '😐', color: '#94a3b8', type: 'neutral', name: 'Netral' }  
+      };
+
+      // Daftar kalimat feedback dalam Bahasa Indonesia
+      const feedbackMessages = {
+        happy: [
+          "Wah, senang sekali melihatmu tersenyum!",
+          "Kamu terlihat sangat bahagia hari ini!",
+          "Senang melihatmu ceria seperti ini!"
+        ],
+        sad: [
+          "Ada yang bisa saya bantu? Kamu terlihat sedih...",
+          "Jangan sedih, yuk kita bicara...",
+          "Ayo semangat! Semua akan baik-baik saja."
+        ],
+        angry: [
+          "Tenang dulu, tarik napas dalam-dalam...",
+          "Marah itu wajar, tapi jangan terlalu lama ya...",
+          "Coba ceritakan apa yang membuatmu kesal..."
+        ],
+        surprised: [
+          "Wah, kaget ya? Ada kejutan apa nih?",
+          "Ekspresimu menunjukkan kejutan yang menyenangkan!",
+          "Apa yang membuatmu terkejut seperti itu?"
+        ],
+        neutral: [
+          "Ekspresimu netral, sedang memikirkan sesuatu ya?",
+          "Apa yang sedang kamu pikirkan?",
+          "Wajahmu terlihat tenang dan damai"
+        ],
+        default: [
+          "Saya mendeteksi perubahan ekspresimu",
+          "Ekspresimu menarik untuk diperhatikan",
+          "Emosi adalah bagian alami dari manusia"
+        ]
+      };
+
+      // Initialize emotion stats display
+      function initEmotionStats() {
+        emotionStatsContainer.innerHTML = '';
+        Object.keys(emotionStyles).forEach(emotion => {
+          const statItem = document.createElement('div');
+          statItem.className = 'emotion-stat';
+          
+          const statLabel = document.createElement('div');
+          statLabel.className = 'emotion-label';
+          statLabel.innerHTML = `
+            <span class="emotion-emoji">${emotionStyles[emotion].emoji}</span>
+            <span class="emotion-name">${emotionStyles[emotion].name}</span>
+          `;
+          
+          const statCount = document.createElement('span');
+          statCount.className = 'emotion-count';
+          statCount.textContent = '0';
+          
+          statItem.appendChild(statLabel);
+          statItem.appendChild(statCount);
+          
+          const progressBar = document.createElement('div');
+          progressBar.className = 'progress-bar';
+          const progressFill = document.createElement('div');
+          progressFill.className = 'progress-fill';
+          progressFill.style.backgroundColor = emotionStyles[emotion].color;
+          progressFill.style.width = '0%';
+          progressBar.appendChild(progressFill);
+          
+          statItem.appendChild(progressBar);
+          emotionStatsContainer.appendChild(statItem);
+        });
+      }
+
+      // Update emotion stats display
+      function updateEmotionStats() {
+        const totalDetections = Object.values(emotionStats).reduce((a, b) => a + b, 0);
+        
+        document.querySelectorAll('.emotion-stat').forEach((stat, index) => {
+          const emotion = Object.keys(emotionStyles)[index];
+          const countElement = stat.querySelector('.emotion-count');
+          const progressFill = stat.querySelector('.progress-fill');
+          
+          countElement.textContent = emotionStats[emotion];
+          
+          if (totalDetections > 0) {
+            const percentage = (emotionStats[emotion] / totalDetections) * 100;
+            progressFill.style.width = `${percentage}%`;
+          } else {
+            progressFill.style.width = '0%';
+          }
+        });
+      }
+
+      // Update detection info
+      function updateDetectionInfo(detections) {
+        if (detections.length === 0) {
+          detectionInfo.innerHTML = '<p>Tidak ada wajah terdeteksi</p>';
+          return;
+        }
+        
+        const face = detections[0];
+        const { expressions, age, gender, genderProbability } = face;
+        const mainExpression = Object.entries(expressions).reduce((a, b) => a[1] > b[1] ? a : b);
+        
+        detectionInfo.innerHTML = `
+          <div style="margin-bottom: 10px;">
+            <strong>Ekspresi Utama:</strong> 
+            <span style="color: ${emotionStyles[mainExpression[0]].color}">
+              ${emotionStyles[mainExpression[0]].name} (${(mainExpression[1] * 100).toFixed(1)}%)
+            </span>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <strong>Usia:</strong> ${age.toFixed(0)} tahun
+          </div>
+          <div>
+            <strong>Gender:</strong> ${gender} (${(genderProbability * 100).toFixed(0)}%)
+          </div>
+        `;
+      }
+
+      // Tombol kontrol
+      toggleSoundsBtn.addEventListener('click', () => {
+        settings.soundEffects = !settings.soundEffects;
+        toggleSoundsBtn.classList.toggle('active', settings.soundEffects);
+        showNotification(settings.soundEffects ? 
+          '🔊 Efek suara diaktifkan' : '🔇 Efek suara dinonaktifkan');
+      });
+
+      toggleVoiceBtn.addEventListener('click', () => {
+        settings.voiceFeedback = !settings.voiceFeedback;
+        toggleVoiceBtn.classList.toggle('active', settings.voiceFeedback);
+        showNotification(settings.voiceFeedback ? 
+          '🗣️ Voice feedback diaktifkan' : '🔇 Voice feedback dinonaktifkan');
+      });
+
+      toggleBlurBtn.addEventListener('click', () => {
+        settings.faceBlur = !settings.faceBlur;
+        toggleBlurBtn.classList.toggle('active', settings.faceBlur);
+        showNotification(settings.faceBlur ? 
+          '👁️ Privasi wajah diaktifkan' : '👀 Privasi wajah dinonaktifkan');
+      });
+
+      // Toggle sidebar
+      toggleSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+
+      // Mainkan efek suara hanya saat emosi berubah
+      function playSound(type) {
+        if (!settings.soundEffects) return;
+        
+        const sound = type === 'positive' ? positiveSound : negativeSound;
+        sound.currentTime = 0;
+        sound.play().catch(e => console.error("Gagal memainkan suara:", e));
+      }
+
+      // Berikan feedback suara hanya saat emosi berubah
+      function giveVoiceFeedback(emotion) {
+        if (!settings.voiceFeedback) return;
+        
+        const synth = window.speechSynthesis;
+        const voices = synth.getVoices();
+        const utterance = new SpeechSynthesisUtterance();
+        
+        // Cari voice Bahasa Indonesia jika tersedia
+        const indonesianVoice = voices.find(voice => 
+          voice.lang === 'id-ID' || voice.name.includes('Indonesian'));
+        
+        // Siapkan pesan
+        let messages = feedbackMessages[emotion] || feedbackMessages.default;
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        
+        // Setel pengaturan suara
+        synth.cancel(); // Batalkan ucapan sebelumnya
+        utterance.text = randomMessage;
+        utterance.voice = indonesianVoice || voices[0];
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        synth.speak(utterance);
+      }
+
+      // Tampilkan notifikasi
+      function showNotification(message, duration = 3000) {
+        notification.textContent = message;
+        notification.style.display = 'block';
+        setTimeout(() => {
+          notification.style.display = 'none';
+        }, duration);
+      }
+
+      // Fungsi untuk mem-blur area wajah
+      function applyFaceBlur(box) {
+        if (!settings.faceBlur) return;
+        
+        ctx.save();
+        ctx.filter = 'blur(15px)';
+        ctx.drawImage(video, box.x, box.y, box.width, box.height, 
+                     box.x, box.y, box.width, box.height);
+        ctx.restore();
+      }
+
+      // Handle perubahan emosi
+      function handleEmotionChange(newEmotion, confidence) {
+        const now = Date.now();
+        const isNewEmotion = newEmotion !== lastEmotion;
+        const isHighConfidence = confidence > 0.8;
+        const isCooldownOver = now - lastEmotionTime > emotionChangeCooldown;
+        
+        if (isNewEmotion && isHighConfidence && isCooldownOver) {
+          const emotionInfo = emotionStyles[newEmotion] || { type: 'neutral' };
+          
+          // Mainkan efek suara
+          playSound(emotionInfo.type);
+          
+          // Berikan voice feedback
+          giveVoiceFeedback(newEmotion);
+          
+          // Tampilkan notifikasi untuk emosi negatif
+          if (emotionInfo.type === 'negative') {
+            showNotification(`⚠️ Deteksi: ${emotionStyles[newEmotion].name.toUpperCase()} - ${feedbackMessages[newEmotion][0]}`, 3000);
+          }
+          
+          // Update state terakhir
+          lastEmotion = newEmotion;
+          lastEmotionTime = now;
+          
+          // Add pulse animation to video container
+          document.getElementById('video-container').classList.add('pulse');
+          setTimeout(() => {
+            document.getElementById('video-container').classList.remove('pulse');
+          }, 500);
+        }
+      }
+
+      // Initialize UI
+      initEmotionStats();
+      
+      // Load model
+      try {
+        status.textContent = "Memuat model AI...";
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+          faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL)
+        ]);
+        
+        status.textContent = "Model AI siap, mengakses kamera...";
+        statusIndicator.classList.add('active');
+        
+        // Start kamera
+        navigator.mediaDevices.getUserMedia({ video: {} })
+          .then(stream => {
+            video.srcObject = stream;
+            status.textContent = 'Siap - Deteksi aktif ✅';
+          })
+          .catch(err => {
+            console.error("Error accessing camera:", err);
+            status.textContent = 'Gagal mengakses kamera';
+            statusIndicator.classList.remove('active');
+            showNotification('❌ Tidak dapat mengakses kamera. Pastikan Anda memberikan izin.', 5000);
+          });
+      } catch (error) {
+        console.error("Error loading models:", error);
+        status.textContent = 'Gagal memuat model AI';
+        statusIndicator.classList.remove('active');
+        showNotification('❌ Gagal memuat model deteksi wajah', 5000);
+      }
+
+      video.addEventListener('play', () => {
+        const displaySize = { width: video.width, height: video.height };
+        faceapi.matchDimensions(canvas, displaySize);
+
+        setInterval(async () => {
+          try {
+            const detections = await faceapi
+              .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+              .withFaceExpressions()
+              .withAgeAndGender();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const resized = faceapi.resizeResults(detections, displaySize);
+
+            // Update stats and info
+            if (resized.length > 0) {
+              const mainExpression = Object.entries(resized[0].expressions).reduce((a, b) => a[1] > b[1] ? a : b);
+              const emotionKey = mainExpression[0];
+              
+              if (emotionStats[emotionKey] !== undefined) {
+                emotionStats[emotionKey]++;
+                updateEmotionStats();
+              }
+              
+              updateDetectionInfo(resized);
+            } else {
+              updateDetectionInfo([]);
+            }
+
+            resized.forEach(result => {
+              const box = result.detection.box;
+              const { age, gender, genderProbability, expressions } = result;
+
+              const mainExpression = Object.entries(expressions).reduce((a, b) => a[1] > b[1] ? a : b);
+              const emotionKey = mainExpression[0];
+              const emotionConfidence = mainExpression[1];
+              const emotionInfo = emotionStyles[emotionKey] || { emoji: '', color: '#FFFFFF', type: 'neutral' };
+
+              const emotionText = `${emotionInfo.emoji} ${emotionInfo.name} - ${(emotionConfidence * 100).toFixed(1)}%`;
+              const genderText = `Gender: ${gender} (${(genderProbability * 100).toFixed(0)}%)`;
+              const ageText = `Usia: ${age.toFixed(1)} tahun`;
+
+              // Handle perubahan emosi
+              handleEmotionChange(emotionKey, emotionConfidence);
+
+              // Apply face blur jika diaktifkan
+              applyFaceBlur(box);
+
+              // Gambar kotak wajah dengan efek neon (kecuali jika blur aktif)
+              if (!settings.faceBlur) {
+                ctx.strokeStyle = emotionInfo.color;
+                ctx.lineWidth = 3;
+                ctx.shadowColor = emotionInfo.color;
+                ctx.shadowBlur = 15;
+                ctx.strokeRect(box.x, box.y, box.width, box.height);
+                ctx.shadowBlur = 0;
+              }
+
+              // Gambar teks informasi
+              ctx.fillStyle = emotionInfo.color;
+              ctx.font = 'bold 16px "Poppins", sans-serif';
+              ctx.shadowColor = 'rgba(0,0,0,0.7)';
+              ctx.shadowBlur = 4;
+              const lines = [emotionText, genderText, ageText];
+              lines.forEach((line, i) => {
+                ctx.fillText(line, box.x + 5, box.y - 10 - (i * 22));
+              });
+              ctx.shadowBlur = 0;
+            });
+          } catch (error) {
+            console.error("Error during detection:", error);
+          }
+        }, 1000); // Deteksi setiap 1 detik
+      });
+    });
+  </script>
+</body>
+</html>
