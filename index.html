@@ -951,5 +951,21 @@
   });
 </script>
 
+ <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const ua = navigator.userAgent.toLowerCase();
+    const isInstagram = ua.includes("instagram");
+
+    if (isInstagram && ua.includes("android")) {
+      // Ganti URL dengan URL kamu
+      const url = "https://synemotion.vercel.app";
+      const intent = `intent://${url.replace(/^https?:\/\//, "")}#Intent;package=com.android.chrome;scheme=https;end`;
+
+      window.location.href = intent;
+    }
+  });
+</script>
+
+
 </body>
 </html>
