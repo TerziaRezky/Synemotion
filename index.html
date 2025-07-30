@@ -938,30 +938,24 @@
     });
   </script>
 
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
-
-    // Deteksi Instagram in-app browser
-    if (ua.includes("Instagram")) {
-      alert("👋 Untuk mengakses fitur deteksi wajah, silakan buka halaman ini di browser seperti Chrome atau Safari. Instagram tidak mengizinkan akses kamera.");
-      // Atau redirect otomatis:
-      // window.location.href = "googlechrome://synemotion.vercel.app";
-    }
-  });
-</script>
-
- <script>
+<script>
   document.addEventListener("DOMContentLoaded", function () {
     const ua = navigator.userAgent.toLowerCase();
     const isInstagram = ua.includes("instagram");
 
-    if (isInstagram && ua.includes("android")) {
-      // Ganti URL dengan URL kamu
-      const url = "https://synemotion.vercel.app";
-      const intent = `intent://${url.replace(/^https?:\/\//, "")}#Intent;package=com.android.chrome;scheme=https;end`;
-
-      window.location.href = intent;
+    if (isInstagram) {
+      document.body.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px;">
+          <div>
+            <h2>🚫 Maaf, fitur tidak didukung di Instagram</h2>
+            <p>Silakan buka halaman ini di browser Chrome agar kamera & ekspresi dapat bekerja dengan baik.</p>
+            <a href="intent://synemotion.vercel.app/#Intent;scheme=https;package=com.android.chrome;end"
+               style="margin-top:20px;display:inline-block;padding:12px 24px;background:#10b981;color:white;border-radius:8px;text-decoration:none;">
+               Buka di Chrome
+            </a>
+          </div>
+        </div>
+      `;
     }
   });
 </script>
