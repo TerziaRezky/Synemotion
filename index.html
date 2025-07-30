@@ -1087,5 +1087,19 @@
       loadModels();
     });
   </script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+
+    // Deteksi Instagram in-app browser
+    if (ua.includes("Instagram")) {
+      alert("👋 Untuk mengakses fitur deteksi wajah, silakan buka halaman ini di browser seperti Chrome atau Safari. Instagram tidak mengizinkan akses kamera.");
+      // Atau redirect otomatis:
+      // window.location.href = "googlechrome://synemotion.vercel.app";
+    }
+  });
+</script>
+
 </body>
 </html>
